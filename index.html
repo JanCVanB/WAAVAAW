@@ -69,6 +69,15 @@
 
     <svg id='canvas' viewbox='-100 -100 200 200'>
       <template v-for='node in sortedNodes'>
+        <destination
+          v-if='node.type === destinationType'
+          v-bind:key='node.id'
+          v-bind:name='node.name'
+          v-bind:height.sync='node.height'
+          v-bind:id='node.id'
+          v-bind:width.sync='node.width'
+          v-bind:x.sync='node.x'
+          v-bind:y.sync='node.y'/>
         <oscillator
           v-if='node.type === oscillatorType'
           v-bind:key='node.id'
@@ -84,7 +93,31 @@
   </div>
 
   <script>
+    var DESTINATION_TYPE = 'destination'
     var OSCILLATOR_TYPE = 'oscillator'
+
+    var Destination = {
+      props: {
+        height: { type: Number, required: true },
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        width: { type: Number, required: true },
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+      },
+      template: '<g> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="style"/> <text alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ name }} </text> </g>',
+      data: function () {
+        return {
+          style: {
+            fill: 'var(--solarized-red)',
+            fillOpacity: '0.3',
+            stroke: 'var(--solarized-base02)',
+            strokeWidth: 0.3,
+            transform: 'translate(-50%, -50%)'
+          }
+        }
+      }
+    }
 
     var Oscillator = {
       props: {
@@ -113,9 +146,11 @@
       el: '#app',
       data: function () {
         return {
-          drawOrder: ['oscillator1'],
+          destinationType: DESTINATION_TYPE,
+          drawOrder: ['destination', 'oscillator1'],
           oscillatorType: OSCILLATOR_TYPE,
           nodes: {
+            destination: { height: 10, id: 'destination', name: 'Speakers', type: DESTINATION_TYPE, width: 50, x: 0, y: 50 },
             oscillator1: { frequency: 440, height: 10, id: 'oscillator1', type: OSCILLATOR_TYPE, width: 50, x: 0, y: -50 }
           }
         }
@@ -133,6 +168,7 @@
         }
       },
       components: {
+        'destination': Destination,
         'oscillator': Oscillator
       }
     })
