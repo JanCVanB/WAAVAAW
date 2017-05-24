@@ -21,6 +21,7 @@
       --solarized-magenta: #d33682;
       --solarized-violet: #6c71c4;
       --solarized-blue: #268bd2;
+      --solarized-blue-light: #92c0da;
       --solarized-cyan: #2aa198;
       --solarized-green: #859900;
       --solarized-green-light: #c1c872;
@@ -110,6 +111,16 @@
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'
           v-on:destroy='destroyNode(node.id)'/>
+        <gain
+          v-if='node.type === gainType'
+          v-bind:key='node.id'
+          v-bind:height.sync='node.height'
+          v-bind:id='node.id'
+          v-bind:node='node.node'
+          v-bind:width.sync='node.width'
+          v-bind:x.sync='node.x'
+          v-bind:y.sync='node.y'
+          v-on:destroy='destroyNode(node.id)'/>
         <oscillator
           v-if='node.type === oscillatorType'
           v-bind:key='node.id'
@@ -133,6 +144,7 @@
         v-on:destroy='disconnect(connection.sourceId, connection.targetId)'/>
       <toolbar
         v-on:connect='connect'
+        v-on:create-gain='createGain'
         v-on:create-oscillator='createOscillator'/>
     </svg>
 
@@ -141,6 +153,7 @@
   <script>
     var AUDIO_CONTEXT = new window.AudioContext()
     var DESTINATION_TYPE = 'destination'
+    var GAIN_TYPE = 'gain'
     var OSCILLATOR_TYPE = 'oscillator'
 
     var Connection = {
@@ -274,13 +287,55 @@
         y: { type: Number, required: true }
       },
       template: (
-        '<node v-bind:canDestroy="false" fill="var(--solarized-red-light)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node v-bind:canDestroy="false" fill="var(--solarized-red-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
       ),
       data: function () {
         return {
           style: {
             transform: 'translate(-50%, -50%)'
           }
+        }
+      },
+      computed: {
+        label: function () {
+          return this.name
+        }
+      },
+      methods: {
+        handleUpdateX: function (newValue) {
+          this.$emit('update:x', newValue)
+        },
+        handleUpdateY: function (newValue) {
+          this.$emit('update:y', newValue)
+        }
+      },
+      components: {
+        'node': Node
+      }
+    }
+
+    var Gain = {
+      props: {
+        height: { type: Number, required: true },
+        id: { type: String, required: true },
+        node: { type: window.GainNode, required: true },
+        width: { type: Number, required: true },
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+      },
+      template: (
+        '<node fill="var(--solarized-blue-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+      ),
+      data: function () {
+        return {
+          style: {
+            transform: 'translate(-50%, -50%)'
+          }
+        }
+      },
+      computed: {
+        label: function () {
+          return 100 * this.node.gain.value + '%'
         }
       },
       methods: {
@@ -307,13 +362,18 @@
         y: { type: Number, required: true }
       },
       template: (
-        '<node fill="var(--solarized-green-light)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node fill="var(--solarized-green-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
       ),
       data: function () {
         return {
           style: {
             transform: 'translate(-50%, -50%)'
           }
+        }
+      },
+      computed: {
+        label: function () {
+          return this.node.frequency.value + ' Hz'
         }
       },
       methods: {
@@ -340,6 +400,8 @@
         '<g class="toolbar">' +
         '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY" v-bind:style="[rectStyle, createOscillatorRectStyle]" v-on:click="createOscillator"/>' +
         '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY"> New Oscillator </text>' +
+        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="gainX" v-bind:y="gainY" v-bind:style="[rectStyle, gainRectStyle]" v-on:click="createGain"/>' +
+        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="gainX" v-bind:y="gainY"> New Gain </text>' +
         '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="connectX" v-bind:y="connectY" v-bind:style="[rectStyle, connectRectStyle]" v-on:click="connect"/>' +
         '<text class="white-text no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="connectX" v-bind:y="connectY"> New Connection </text>' +
         '</g>'
@@ -361,7 +423,7 @@
           return { fill: 'var(--solarized-base02)' }
         },
         connectX: function () {
-          return this.rectWidth / 2
+          return this.rectWidth
         },
         connectY: function () {
           return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
@@ -370,15 +432,34 @@
           return { fill: 'var(--solarized-green-light)' }
         },
         createOscillatorX: function () {
-          return 0 - this.rectWidth / 2
+          return 0 - this.rectWidth
         },
         createOscillatorY: function () {
+          return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
+        },
+        gainRectStyle: function () {
+          return { fill: 'var(--solarized-blue-light)' }
+        },
+        gainX: function () {
+          return 0
+        },
+        gainY: function () {
           return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
         }
       },
       methods: {
         connect: function () {
-          this.$emit('connect', 'oscillator1', 'destination')
+          this.$emit('connect', 'oscillator1', 'gain1')
+          this.$emit('connect', 'gain1', 'destination')
+        },
+        createGain: function () {
+          this.$emit('create-gain', {
+            height: 10,
+            id: 'gain1',
+            width: 50,
+            x: 0,
+            y: 0
+          })
         },
         createOscillator: function () {
           this.$emit('create-oscillator', {
@@ -423,6 +504,7 @@
           connections: {},
           destinationType: DESTINATION_TYPE,
           drawOrder: ['destination'],
+          gainType: GAIN_TYPE,
           oscillatorType: OSCILLATOR_TYPE,
           nodes: {
             destination: {
@@ -461,6 +543,16 @@
               sourceId: sourceId,
               targetId: targetId
             })
+          }
+        },
+        createGain: function (gainInfo) {
+          var oldNodeId = this.findOldNodeId(gainInfo.id)
+          if (!oldNodeId) {
+            Vue.set(this.nodes, gainInfo.id, Object.assign(gainInfo, {
+              node: this.audioContext.createGain(),
+              type: GAIN_TYPE
+            }))
+            this.drawOrder.push(gainInfo.id)
           }
         },
         createOscillator: function (oscillatorInfo) {
@@ -510,6 +602,7 @@
       components: {
         'connection': Connection,
         'destination': Destination,
+        'gain': Gain,
         'oscillator': Oscillator,
         'toolbar': Toolbar
       }
