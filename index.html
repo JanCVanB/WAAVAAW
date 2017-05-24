@@ -75,6 +75,13 @@
     .destroy-button:hover {
       fill: var(--solarized-base03);
     }
+    .connector {
+      cursor: pointer;
+      fill: var(--solarized-base02);
+    }
+    .connector:hover {
+      fill: var(--solarized-base00);
+    }
     .toolbar {
       cursor: pointer;
     }
@@ -106,40 +113,50 @@
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
           v-bind:name='node.name'
+          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
+          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
           v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'/>
+          v-on:destroy='destroyNode(node.id)'
+          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
+          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
         <gain
           v-if='node.type === gainType'
           v-bind:key='node.id'
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
+          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
+          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
           v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'/>
+          v-on:destroy='destroyNode(node.id)'
+          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
+          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
         <oscillator
           v-if='node.type === oscillatorType'
           v-bind:key='node.id'
           v-bind:frequency='node.frequency'
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
+          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
+          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
           v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'/>
+          v-on:destroy='destroyNode(node.id)'
+          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
+          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
       </template>
       <connection
         v-for='connection in connections'
         v-bind:key='connection.id'
         v-bind:id='connection.id'
-        v-bind:source-id.sync='connection.sourceId'
         v-bind:source='nodes[connection.sourceId]'
-        v-bind:target-id.sync='connection.targetId'
         v-bind:target='nodes[connection.targetId]'
         v-on:destroy='disconnect(connection.sourceId, connection.targetId)'/>
       <toolbar
@@ -159,9 +176,7 @@
     var Connection = {
       props: {
         id: { type: String, required: true },
-        sourceId: { type: String, required: true },
         source: { type: Object, required: true },
-        targetId: { type: String, required: true },
         target: { type: Object, required: true }
       },
       template: (
@@ -191,8 +206,8 @@
         pathData: function () {
           var x1 = this.source.x
           var x2 = this.target.x
-          var y1 = this.source.y + this.source.height / 2
-          var y2 = this.target.y - this.target.height / 2
+          var y1 = this.source.y + this.source.height * 0.95
+          var y2 = this.target.y - this.target.height * 7 / 8
           var cy = (y1 + y2) / 2
           return (
             'M' + x1 + ',' + y1 +
@@ -213,22 +228,59 @@
       props: {
         canDestroy: { type: Boolean, default: true },
         fill: { type: String, default: 'var(--canvas-background-color)' },
+        hasBottomConnector: { type: Boolean, default: false },
+        hasTopConnector: { type: Boolean, default: false },
         height: { type: Number, required: true },
+        isBottomConnectorSelected: { type: Boolean, default: false },
+        isTopConnectorSelected: { type: Boolean, default: false },
         label: { type: String, required: true },
         width: { type: Number, required: true },
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
       template: (
-        '<g class="node" v-on:mousedown="handleMousedown" v-on:mouseleave="handleMouseleave" v-on:mousemove="handleMousemove" v-on:mouseup="handleMouseup">' +
-        '<rect v-bind:height="height" v-bind:rx="height / 2" v-bind:ry="height / 2" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/>' +
-        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text>' +
-        '<text v-if="canDestroy" class="destroy-button no-select" alignment-baseline="middle" font-size="6px" text-anchor="middle" v-bind:x="destroyButtonX" v-bind:y="destroyButtonY" v-on:click="$emit(\'destroy\')"> &nbsp; x &nbsp; </text>' +
+        '<g class="node"' +
+        '>' +
+        '<rect' +
+        ' v-bind:height="height" v-bind:width="width"' +
+        ' v-bind:rx="height / 2" v-bind:ry="height / 2"' +
+        ' v-bind:x="x" v-bind:y="y"' +
+        ' v-bind:style="rectStyle"' +
+        ' v-on:mousedown="handleMousedown"' +
+        ' v-on:mouseleave="handleMouseleave"' +
+        ' v-on:mousemove="handleMousemove"' +
+        ' v-on:mouseup="handleMouseup"' +
+        '/>' +
+        '<text class="no-click no-select"' +
+        ' v-bind:font-size="height / 2"' +
+        ' alignment-baseline="middle" text-anchor="middle"' +
+        ' v-bind:x="x" v-bind:y="y"' +
+        '> {{ label }} </text>' +
+        '<text v-if="canDestroy" class="destroy-button no-select"' +
+        ' font-size="6px"' +
+        ' alignment-baseline="middle" text-anchor="middle"' +
+        ' v-bind:x="destroyButtonX" v-bind:y="destroyButtonY"' +
+        ' v-on:click="$emit(\'destroy\')"' +
+        '> &nbsp; x &nbsp; </text>' +
+        '<polygon v-if="hasTopConnector" class="connector"' +
+        ' v-bind:points="topConnectorPoints"' +
+        ' v-bind:style="[connectorStyle, topConnectorStyle]"' +
+        ' v-on:click="$emit(\'select-top-connector\')"' +
+        '/>' +
+        '<polygon v-if="hasBottomConnector" class="connector"' +
+        ' v-bind:points="bottomConnectorPoints"' +
+        ' v-bind:style="[connectorStyle, bottomConnectorStyle]"' +
+        ' v-on:click="$emit(\'select-bottom-connector\')"' +
+        '/>' +
         '</g>'
       ),
       data: function () {
         return {
           clientScaleFactor: 0,
+          connectorStyle: {
+            fillOpacity: '1',
+            strokeWidth: 0
+          },
           destroyButtonPadding: 3,
           isDragging: false,
           oldClientX: 0,
@@ -243,11 +295,42 @@
         }
       },
       computed: {
+        bottomConnectorPoints: function () {
+          return (
+            this.x + ',' + (this.y + this.height) + ' ' +
+            (this.x + this.height / 3) + ',' + (this.y + this.height / 2) + ' ' +
+            (this.x - this.height / 3) + ',' + (this.y + this.height / 2) + ' '
+          )
+        },
+        bottomConnectorStyle: function () {
+          if (this.isBottomConnectorSelected) {
+            return {
+              fill: 'var(--solarized-base00)'
+            }
+          }
+          return {}
+        },
         destroyButtonX: function () {
           return this.x + this.width / 2 + this.destroyButtonPadding
         },
         destroyButtonY: function () {
           return this.y - this.height / 2 - this.destroyButtonPadding
+        },
+        topConnectorPoints: function () {
+          return (
+            (this.x - this.height / 4) + ',' + (this.y - this.height / 2) + ' ' +
+            (this.x + this.height / 4) + ',' + (this.y - this.height / 2) + ' ' +
+            (this.x + this.height / 2) + ',' + (this.y - this.height * 7 / 8) + ' ' +
+            (this.x - this.height / 2) + ',' + (this.y - this.height * 7 / 8) + ' '
+          )
+        },
+        topConnectorStyle: function () {
+          if (this.isTopConnectorSelected) {
+            return {
+              fill: 'var(--solarized-base00)'
+            }
+          }
+          return {}
         }
       },
       methods: {
@@ -280,6 +363,8 @@
       props: {
         height: { type: Number, required: true },
         id: { type: String, required: true },
+        isBottomConnectorSelected: { type: Boolean, default: false },
+        isTopConnectorSelected: { type: Boolean, default: false },
         name: { type: String, required: true },
         node: { type: window.AudioDestinationNode, required: true },
         width: { type: Number, required: true },
@@ -287,7 +372,23 @@
         y: { type: Number, required: true }
       },
       template: (
-        '<node v-bind:canDestroy="false" fill="var(--solarized-red-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node' +
+        ' v-bind:canDestroy="false"' +
+        ' fill="var(--solarized-red-light)"' +
+        ' v-bind:height="height"' +
+        ' v-bind:has-top-connector="true"' +
+        ' v-bind:is-bottom-connector-selected="isBottomConnectorSelected"' +
+        ' v-bind:is-top-connector-selected="isTopConnectorSelected"' +
+        ' v-bind:label="label"' +
+        ' v-bind:width="width"' +
+        ' v-bind:x="x"' +
+        ' v-bind:y="y"' +
+        ' v-on:destroy="$emit(\'destroy\')"' +
+        ' v-on:select-bottom-connector="$emit(\'select-bottom-connector\')"' +
+        ' v-on:select-top-connector="$emit(\'select-top-connector\')"' +
+        ' v-on:update:x="handleUpdateX"' +
+        ' v-on:update:y="handleUpdateY"' +
+        '/>'
       ),
       data: function () {
         return {
@@ -318,13 +419,31 @@
       props: {
         height: { type: Number, required: true },
         id: { type: String, required: true },
+        isBottomConnectorSelected: { type: Boolean, default: false },
+        isTopConnectorSelected: { type: Boolean, default: false },
         node: { type: window.GainNode, required: true },
         width: { type: Number, required: true },
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
       template: (
-        '<node fill="var(--solarized-blue-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node' +
+        ' fill="var(--solarized-blue-light)"' +
+        ' v-bind:height="height"' +
+        ' v-bind:has-bottom-connector="true"' +
+        ' v-bind:has-top-connector="true"' +
+        ' v-bind:is-bottom-connector-selected="isBottomConnectorSelected"' +
+        ' v-bind:is-top-connector-selected="isTopConnectorSelected"' +
+        ' v-bind:label="label"' +
+        ' v-bind:width="width"' +
+        ' v-bind:x="x"' +
+        ' v-bind:y="y"' +
+        ' v-on:destroy="$emit(\'destroy\')"' +
+        ' v-on:select-bottom-connector="$emit(\'select-bottom-connector\')"' +
+        ' v-on:select-top-connector="$emit(\'select-top-connector\')"' +
+        ' v-on:update:x="handleUpdateX"' +
+        ' v-on:update:y="handleUpdateY"' +
+        '/>'
       ),
       data: function () {
         return {
@@ -356,13 +475,30 @@
         frequency: { type: Number, required: true },
         height: { type: Number, required: true },
         id: { type: String, required: true },
+        isBottomConnectorSelected: { type: Boolean, default: false },
+        isTopConnectorSelected: { type: Boolean, default: false },
         node: { type: window.OscillatorNode, required: true },
         width: { type: Number, required: true },
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
       template: (
-        '<node fill="var(--solarized-green-light)" v-bind:height="height" v-bind:label="label" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node' +
+        ' fill="var(--solarized-green-light)"' +
+        ' v-bind:height="height"' +
+        ' v-bind:has-bottom-connector="true"' +
+        ' v-bind:is-bottom-connector-selected="isBottomConnectorSelected"' +
+        ' v-bind:is-top-connector-selected="isTopConnectorSelected"' +
+        ' v-bind:label="label"' +
+        ' v-bind:width="width"' +
+        ' v-bind:x="x"' +
+        ' v-bind:y="y"' +
+        ' v-on:destroy="$emit(\'destroy\')"' +
+        ' v-on:select-bottom-connector="$emit(\'select-bottom-connector\')"' +
+        ' v-on:select-top-connector="$emit(\'select-top-connector\')"' +
+        ' v-on:update:x="handleUpdateX"' +
+        ' v-on:update:y="handleUpdateY"' +
+        '/>'
       ),
       data: function () {
         return {
@@ -398,12 +534,23 @@
     var Toolbar = {
       template: (
         '<g class="toolbar">' +
-        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY" v-bind:style="[rectStyle, createOscillatorRectStyle]" v-on:click="createOscillator"/>' +
-        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY"> New Oscillator </text>' +
-        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="gainX" v-bind:y="gainY" v-bind:style="[rectStyle, gainRectStyle]" v-on:click="createGain"/>' +
-        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="gainX" v-bind:y="gainY"> New Gain </text>' +
-        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="connectX" v-bind:y="connectY" v-bind:style="[rectStyle, connectRectStyle]" v-on:click="connect"/>' +
-        '<text class="white-text no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="connectX" v-bind:y="connectY"> New Connection </text>' +
+        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth"' +
+        ' v-bind:x="createOscillatorX" v-bind:y="createOscillatorY"' +
+        ' v-bind:style="[rectStyle, createOscillatorRectStyle]"' +
+        ' v-on:click="createOscillator"' +
+        '/>' +
+        '<text class="no-click no-select" alignment-baseline="middle"' +
+        ' v-bind:font-size="rectHeight / 2" text-anchor="middle"' +
+        ' v-bind:x="createOscillatorX" v-bind:y="createOscillatorY"' +
+        '> New Oscillator </text>' +
+        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth"' +
+        ' v-bind:x="gainX" v-bind:y="gainY"' +
+        ' v-bind:style="[rectStyle, gainRectStyle]" v-on:click="createGain"' +
+        '/>' +
+        '<text class="no-click no-select" alignment-baseline="middle"' +
+        ' v-bind:font-size="rectHeight / 2" text-anchor="middle"' +
+        ' v-bind:x="gainX" v-bind:y="gainY"' +
+        '> New Gain </text>' +
         '</g>'
       ),
       data: function () {
@@ -419,20 +566,11 @@
         }
       },
       computed: {
-        connectRectStyle: function () {
-          return { fill: 'var(--solarized-base02)' }
-        },
-        connectX: function () {
-          return this.rectWidth
-        },
-        connectY: function () {
-          return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
-        },
         createOscillatorRectStyle: function () {
           return { fill: 'var(--solarized-green-light)' }
         },
         createOscillatorX: function () {
-          return 0 - this.rectWidth
+          return 0 - this.rectWidth / 2
         },
         createOscillatorY: function () {
           return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
@@ -441,7 +579,7 @@
           return { fill: 'var(--solarized-blue-light)' }
         },
         gainX: function () {
-          return 0
+          return this.rectWidth / 2
         },
         gainY: function () {
           return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
@@ -505,7 +643,8 @@
           destinationType: DESTINATION_TYPE,
           drawOrder: ['destination'],
           gainType: GAIN_TYPE,
-          oscillatorType: OSCILLATOR_TYPE,
+          nextConnectionSourceId: null,
+          nextConnectionTargetId: null,
           nodes: {
             destination: {
               height: 10,
@@ -517,7 +656,8 @@
               x: 0,
               y: 50
             }
-          }
+          },
+          oscillatorType: OSCILLATOR_TYPE
         }
       },
       computed: {
@@ -597,6 +737,31 @@
               return node.id === nodeId
             }
           )
+        },
+        handleClickCanvas: function () {
+          this.resetNextConnection()
+        },
+        handleSelectBottomConnector: function (nodeId) {
+          if (this.nextConnectionTargetId === nodeId) return
+          if (this.nextConnectionTargetId) {
+            this.connect(nodeId, this.nextConnectionTargetId)
+            this.resetNextConnection()
+          } else {
+            this.nextConnectionSourceId = nodeId
+          }
+        },
+        handleSelectTopConnector: function (nodeId) {
+          if (this.nextConnectionSourceId === nodeId) return
+          if (this.nextConnectionSourceId) {
+            this.connect(this.nextConnectionSourceId, nodeId)
+            this.resetNextConnection()
+          } else {
+            this.nextConnectionTargetId = nodeId
+          }
+        },
+        resetNextConnection: function () {
+          this.nextConnectionSourceId = null
+          this.nextConnectionTargetId = null
         }
       },
       components: {
