@@ -72,9 +72,9 @@
         <destination
           v-if='node.type === destinationType'
           v-bind:key='node.id'
-          v-bind:name='node.name'
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
+          v-bind:name='node.name'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'/>
@@ -188,15 +188,20 @@
       el: '#app',
       data: function () {
         return {
-          connections: {
-            oscillator1ToSpeakers: { id: 'oscillator1ToSpeakers', sourceId: 'oscillator1', targetId: 'destination' }
-          },
+          connections: {},
           destinationType: DESTINATION_TYPE,
-          drawOrder: ['destination', 'oscillator1'],
+          drawOrder: ['destination'],
           oscillatorType: OSCILLATOR_TYPE,
           nodes: {
-            destination: { height: 10, id: 'destination', name: 'Speakers', type: DESTINATION_TYPE, width: 50, x: 0, y: 50 },
-            oscillator1: { frequency: 440, height: 10, id: 'oscillator1', type: OSCILLATOR_TYPE, width: 50, x: 0, y: -50 }
+            destination: {
+              height: 10,
+              id: 'destination',
+              name: 'Destination',
+              type: DESTINATION_TYPE,
+              width: 50,
+              x: 0,
+              y: 50
+            }
           }
         }
       },
@@ -211,6 +216,66 @@
             }
           )
         }
+      },
+      methods: {
+        createOscillator: function (oscillatorInfo) {
+          var oldNodeId = this.findOldNodeId(oscillatorInfo.id)
+          if (!oldNodeId) {
+            Vue.set(this.nodes, oscillatorInfo.id, Object.assign(oscillatorInfo, {
+              type: OSCILLATOR_TYPE
+            }))
+            this.drawOrder.push(oscillatorInfo.id)
+          }
+        },
+        connect: function (sourceId, targetId) {
+          var oldConnectionId = this.findOldConnectionId(sourceId, targetId)
+          if (!oldConnectionId) {
+            var newConnectionId = sourceId + '_to_' + targetId
+            Vue.set(this.connections, newConnectionId, {
+              id: newConnectionId,
+              sourceId: sourceId,
+              targetId: targetId
+            })
+          }
+        },
+        destroyNode: function (nodeId) {
+          if (this.nodes[nodeId]) {
+            Vue.delete(this.nodes, nodeId)
+          }
+        },
+        disconnect: function (sourceId, targetId) {
+          var oldConnectionId = this.findOldConnectionId(sourceId, targetId)
+          if (oldConnectionId) {
+            Vue.delete(this.connections, oldConnectionId)
+          }
+        },
+        findOldConnectionId: function (sourceId, targetId) {
+          return _.findKey(
+            this.connections,
+            function (connection) {
+              return connection.sourceId === sourceId && connection.targetId === targetId
+            }
+          )
+        },
+        findOldNodeId: function (nodeId) {
+          return _.findKey(
+            this.nodes,
+            function (node) {
+              return node.id === nodeId
+            }
+          )
+        }
+      },
+      mounted: function () {
+        this.createOscillator({
+          frequency: 440,
+          height: 10,
+          id: 'oscillator1',
+          width: 50,
+          x: 0,
+          y: -50
+        })
+        this.connect('oscillator1', 'destination')
       },
       components: {
         'connection': Connection,
