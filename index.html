@@ -62,6 +62,13 @@
     .node {
       cursor: move;
     }
+    .destroy-button {
+      fill: var(--solarized-base01);
+      cursor: pointer;
+    }
+    .destroy-button:hover {
+      fill: var(--solarized-base03);
+    }
   </style>
   <script src='https://unpkg.com/vue/dist/vue.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js'></script>
@@ -87,7 +94,8 @@
           v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
-          v-bind:y.sync='node.y'/>
+          v-bind:y.sync='node.y'
+          v-on:destroy='destroyNode(node.id)'/>
         <oscillator
           v-if='node.type === oscillatorType'
           v-bind:key='node.id'
@@ -97,7 +105,8 @@
           v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
-          v-bind:y.sync='node.y'/>
+          v-bind:y.sync='node.y'
+          v-on:destroy='destroyNode(node.id)'/>
       </template>
       <connection
         v-for='connection in connections'
@@ -106,7 +115,8 @@
         v-bind:source-id.sync='connection.sourceId'
         v-bind:source='nodes[connection.sourceId]'
         v-bind:target-id.sync='connection.targetId'
-        v-bind:target='nodes[connection.targetId]'/>
+        v-bind:target='nodes[connection.targetId]'
+        v-on:destroy='disconnect(connection.sourceId, connection.targetId)'/>
     </svg>
 
   </div>
@@ -124,9 +134,16 @@
         targetId: { type: String, required: true },
         target: { type: Object, required: true }
       },
-      template: '<path v-bind:d="pathData" v-bind:style="style"/>',
+      template: (
+        '<g>' +
+        '<path v-bind:d="pathData" v-bind:style="style"/>' +
+        '<text class="destroy-button no-select" alignment-baseline="middle" font-size="8px" text-anchor="middle" v-bind:x="destroyButtonX" v-bind:y="destroyButtonY" v-on:click="$emit(\'destroy\')"> &nbsp; x &nbsp; </text>' +
+        '</g>'
+      ),
+
       data: function () {
         return {
+          destroyButtonPadding: 0,
           style: {
             fill: 'none',
             stroke: 'var(--solarized-base02)',
@@ -135,6 +152,12 @@
         }
       },
       computed: {
+        destroyButtonX: function () {
+          return (this.source.x + this.target.x) / 2 + this.destroyButtonPadding
+        },
+        destroyButtonY: function () {
+          return (this.source.y + this.target.y) / 2 - this.destroyButtonPadding
+        },
         pathData: function () {
           var x1 = this.source.x
           var x2 = this.target.x
@@ -158,6 +181,7 @@
 
     var Node = {
       props: {
+        canDestroy: { type: Boolean, default: true },
         fill: { type: String, default: 'var(--canvas-background-color)' },
         height: { type: Number, required: true },
         label: { type: String, required: true },
@@ -165,10 +189,17 @@
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
-      template: '<g class="node" v-on:mousedown="handleMousedown" v-on:mouseleave="handleMouseleave" v-on:mousemove="handleMousemove" v-on:mouseup="handleMouseup"> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/> <text class="no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text> </g>',
+      template: (
+        '<g class="node" v-on:mousedown="handleMousedown" v-on:mouseleave="handleMouseleave" v-on:mousemove="handleMousemove" v-on:mouseup="handleMouseup">' +
+        '<rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/>' +
+        '<text class="no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text>' +
+        '<text v-if="canDestroy" class="destroy-button no-select" alignment-baseline="middle" font-size="6px" text-anchor="middle" v-bind:x="destroyButtonX" v-bind:y="destroyButtonY" v-on:click="$emit(\'destroy\')"> &nbsp; x &nbsp; </text>' +
+        '</g>'
+      ),
       data: function () {
         return {
           clientScaleFactor: 0,
+          destroyButtonPadding: 3,
           isDragging: false,
           oldClientX: 0,
           oldClientY: 0,
@@ -179,6 +210,14 @@
             strokeWidth: 0.3,
             transform: 'translate(-50%, -50%)'
           }
+        }
+      },
+      computed: {
+        destroyButtonX: function () {
+          return this.x + this.width / 2 + this.destroyButtonPadding
+        },
+        destroyButtonY: function () {
+          return this.y - this.height / 2 - this.destroyButtonPadding
         }
       },
       methods: {
@@ -217,7 +256,9 @@
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
-      template: '<node fill="var(--solarized-red)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>',
+      template: (
+        '<node v-bind:canDestroy="false" fill="var(--solarized-red)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+      ),
       data: function () {
         return {
           style: {
@@ -248,7 +289,9 @@
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
-      template: '<node fill="var(--solarized-green)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>',
+      template: (
+        '<node fill="var(--solarized-green)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+      ),
       data: function () {
         return {
           style: {
@@ -333,6 +376,12 @@
           }
         },
         destroyNode: function (nodeId) {
+          var component = this
+          _.values(component.connections).forEach(function (connection) {
+            if (connection.sourceId === nodeId || connection.targetId === nodeId) {
+              component.disconnect(connection.sourceId, connection.targetId)
+            }
+          })
           if (this.nodes[nodeId]) {
             Vue.delete(this.nodes, nodeId)
           }
