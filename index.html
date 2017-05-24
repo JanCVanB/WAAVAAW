@@ -24,7 +24,8 @@
       --solarized-green: #859900;
     }
     html, body, #app {
-      background-color: var(--solarized-base2);
+      --app-background-color: var(--solarized-base2);
+      background-color: var(--app-background-color);
       color: var(--solarized-base00);
       margin: 0;
       padding: 0;
@@ -42,8 +43,9 @@
       margin: 18px 0px;
     }
     #canvas {
+      --canvas-background-color: var(--solarized-base3);
       --canvas-margin: 30px;
-      background-color: var(--solarized-base3);
+      background-color: var(--canvas-background-color);
       box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
       position: fixed;
       top: var(--app-header-height);
@@ -53,6 +55,7 @@
     }
   </style>
   <script src='https://unpkg.com/vue/dist/vue.js'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js'></script>
 </head>
 <body>
   <div id='app'>
@@ -65,14 +68,73 @@
     </h3>
 
     <svg id='canvas' viewbox='-100 -100 200 200'>
+      <template v-for='node in sortedNodes'>
+        <oscillator
+          v-if='node.type === oscillatorType'
+          v-bind:key='node.id'
+          v-bind:frequency='node.frequency'
+          v-bind:height.sync='node.height'
+          v-bind:id='node.id'
+          v-bind:width.sync='node.width'
+          v-bind:x.sync='node.x'
+          v-bind:y.sync='node.y'/>
+      </template>
     </svg>
 
   </div>
 
   <script>
-    // eslint-disable-next-line no-new
-    new Vue({
-      el: '#app'
+    var OSCILLATOR_TYPE = 'oscillator'
+
+    var Oscillator = {
+      props: {
+        frequency: { type: Number, required: true },
+        height: { type: Number, required: true },
+        id: { type: String, required: true },
+        width: { type: Number, required: true },
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+      },
+      template: '<g> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="style"/> <text alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ frequency }} Hz </text> </g>',
+      data: function () {
+        return {
+          style: {
+            fill: 'var(--solarized-green)',
+            fillOpacity: '0.3',
+            stroke: 'var(--solarized-base02)',
+            strokeWidth: 0.3,
+            transform: 'translate(-50%, -50%)'
+          }
+        }
+      }
+    }
+
+    window.vm = new Vue({
+      el: '#app',
+      data: function () {
+        return {
+          drawOrder: ['oscillator1'],
+          oscillatorType: OSCILLATOR_TYPE,
+          nodes: {
+            oscillator1: { frequency: 440, height: 10, id: 'oscillator1', type: OSCILLATOR_TYPE, width: 50, x: 0, y: -50 }
+          }
+        }
+      },
+      computed: {
+        sortedNodes: function () {
+          var component = this
+          var nodes = _.values(component.nodes)
+          return _.sortBy(
+            nodes,
+            function (node) {
+              return component.drawOrder.indexOf(node.id)
+            }
+          )
+        }
+      },
+      components: {
+        'oscillator': Oscillator
+      }
     })
   </script>
 </body>

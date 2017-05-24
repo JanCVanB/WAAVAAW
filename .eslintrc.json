@@ -1,6 +1,7 @@
 {
     "extends": "standard",
     "globals": {
+        "_": false,
         "Vue": false
     },
     "plugins": [
