@@ -1,0 +1,11 @@
+{
+    "extends": "standard",
+    "globals": {
+        "Vue": false
+    },
+    "plugins": [
+        "html",
+        "standard",
+        "promise"
+    ]
+}
