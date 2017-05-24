@@ -75,6 +75,7 @@
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
           v-bind:name='node.name'
+          v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'/>
@@ -84,6 +85,7 @@
           v-bind:frequency='node.frequency'
           v-bind:height.sync='node.height'
           v-bind:id='node.id'
+          v-bind:node='node.node'
           v-bind:width.sync='node.width'
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'/>
@@ -101,6 +103,7 @@
   </div>
 
   <script>
+    var AUDIO_CONTEXT = new window.AudioContext()
     var DESTINATION_TYPE = 'destination'
     var OSCILLATOR_TYPE = 'oscillator'
 
@@ -135,6 +138,12 @@
             ' ' + x2 + ',' + y2
           )
         }
+      },
+      mounted: function () {
+        this.source.node.connect(this.target.node)
+      },
+      beforeDestroy: function () {
+        this.source.node.disconnect(this.target.node)
       }
     }
 
@@ -143,6 +152,7 @@
         height: { type: Number, required: true },
         id: { type: String, required: true },
         name: { type: String, required: true },
+        node: { type: window.AudioDestinationNode, required: true },
         width: { type: Number, required: true },
         x: { type: Number, required: true },
         y: { type: Number, required: true }
@@ -166,6 +176,7 @@
         frequency: { type: Number, required: true },
         height: { type: Number, required: true },
         id: { type: String, required: true },
+        node: { type: window.OscillatorNode, required: true },
         width: { type: Number, required: true },
         x: { type: Number, required: true },
         y: { type: Number, required: true }
@@ -181,6 +192,12 @@
             transform: 'translate(-50%, -50%)'
           }
         }
+      },
+      mounted: function () {
+        this.node.start(0)
+      },
+      beforeDestroy: function () {
+        this.node.stop()
       }
     }
 
@@ -188,6 +205,7 @@
       el: '#app',
       data: function () {
         return {
+          audioContext: AUDIO_CONTEXT,
           connections: {},
           destinationType: DESTINATION_TYPE,
           drawOrder: ['destination'],
@@ -197,6 +215,7 @@
               height: 10,
               id: 'destination',
               name: 'Destination',
+              node: AUDIO_CONTEXT.destination,
               type: DESTINATION_TYPE,
               width: 50,
               x: 0,
@@ -222,6 +241,7 @@
           var oldNodeId = this.findOldNodeId(oscillatorInfo.id)
           if (!oldNodeId) {
             Vue.set(this.nodes, oscillatorInfo.id, Object.assign(oscillatorInfo, {
+              node: this.audioContext.createOscillator(oscillatorInfo.frequency),
               type: OSCILLATOR_TYPE
             }))
             this.drawOrder.push(oscillatorInfo.id)
