@@ -53,6 +53,15 @@
       height: calc(100% - var(--app-header-height) - var(--canvas-margin));
       width: calc(100% - 2 * var(--canvas-margin));
     }
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .node {
+      cursor: move;
+    }
   </style>
   <script src='https://unpkg.com/vue/dist/vue.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js'></script>
@@ -147,6 +156,57 @@
       }
     }
 
+    var Node = {
+      props: {
+        fill: { type: String, default: 'var(--canvas-background-color)' },
+        height: { type: Number, required: true },
+        label: { type: String, required: true },
+        width: { type: Number, required: true },
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+      },
+      template: '<g class="node" v-on:mousedown="handleMousedown" v-on:mouseleave="handleMouseleave" v-on:mousemove="handleMousemove" v-on:mouseup="handleMouseup"> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/> <text class="no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text> </g>',
+      data: function () {
+        return {
+          clientScaleFactor: 0,
+          isDragging: false,
+          oldClientX: 0,
+          oldClientY: 0,
+          rectStyle: {
+            fill: this.fill,
+            fillOpacity: '0.3',
+            stroke: 'var(--solarized-base02)',
+            strokeWidth: 0.3,
+            transform: 'translate(-50%, -50%)'
+          }
+        }
+      },
+      methods: {
+        handleMousedown: function (event) {
+          this.isDragging = true
+          this.oldClientX = event.clientX
+          this.oldClientY = event.clientY
+          var boundingClientRect = this.$el.parentNode.getBoundingClientRect()
+          var shorterSide = Math.min(boundingClientRect.height, boundingClientRect.width)
+          this.clientScaleFactor = 200 / shorterSide
+        },
+        handleMouseleave: function (event) {
+          this.isDragging = false
+        },
+        handleMousemove: function (event) {
+          if (this.isDragging) {
+            this.$emit('update:x', this.x + this.clientScaleFactor * (event.clientX - this.oldClientX))
+            this.$emit('update:y', this.y + this.clientScaleFactor * (event.clientY - this.oldClientY))
+            this.oldClientX = event.clientX
+            this.oldClientY = event.clientY
+          }
+        },
+        handleMouseup: function (event) {
+          this.isDragging = false
+        }
+      }
+    }
+
     var Destination = {
       props: {
         height: { type: Number, required: true },
@@ -157,17 +217,24 @@
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
-      template: '<g> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="style"/> <text alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ name }} </text> </g>',
+      template: '<node fill="var(--solarized-red)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>',
       data: function () {
         return {
           style: {
-            fill: 'var(--solarized-red)',
-            fillOpacity: '0.3',
-            stroke: 'var(--solarized-base02)',
-            strokeWidth: 0.3,
             transform: 'translate(-50%, -50%)'
           }
         }
+      },
+      methods: {
+        handleUpdateX: function (newValue) {
+          this.$emit('update:x', newValue)
+        },
+        handleUpdateY: function (newValue) {
+          this.$emit('update:y', newValue)
+        }
+      },
+      components: {
+        'node': Node
       }
     }
 
@@ -181,16 +248,20 @@
         x: { type: Number, required: true },
         y: { type: Number, required: true }
       },
-      template: '<g> <rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="style"/> <text alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ frequency }} Hz </text> </g>',
+      template: '<node fill="var(--solarized-green)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>',
       data: function () {
         return {
           style: {
-            fill: 'var(--solarized-green)',
-            fillOpacity: '0.3',
-            stroke: 'var(--solarized-base02)',
-            strokeWidth: 0.3,
             transform: 'translate(-50%, -50%)'
           }
+        }
+      },
+      methods: {
+        handleUpdateX: function (newValue) {
+          this.$emit('update:x', newValue)
+        },
+        handleUpdateY: function (newValue) {
+          this.$emit('update:y', newValue)
         }
       },
       mounted: function () {
@@ -198,6 +269,9 @@
       },
       beforeDestroy: function () {
         this.node.stop()
+      },
+      components: {
+        'node': Node
       }
     }
 
