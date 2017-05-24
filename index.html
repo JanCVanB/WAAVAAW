@@ -88,6 +88,14 @@
           v-bind:x.sync='node.x'
           v-bind:y.sync='node.y'/>
       </template>
+      <connection
+        v-for='connection in connections'
+        v-bind:key='connection.id'
+        v-bind:id='connection.id'
+        v-bind:source-id.sync='connection.sourceId'
+        v-bind:source='nodes[connection.sourceId]'
+        v-bind:target-id.sync='connection.targetId'
+        v-bind:target='nodes[connection.targetId]'/>
     </svg>
 
   </div>
@@ -95,6 +103,40 @@
   <script>
     var DESTINATION_TYPE = 'destination'
     var OSCILLATOR_TYPE = 'oscillator'
+
+    var Connection = {
+      props: {
+        id: { type: String, required: true },
+        sourceId: { type: String, required: true },
+        source: { type: Object, required: true },
+        targetId: { type: String, required: true },
+        target: { type: Object, required: true }
+      },
+      template: '<path v-bind:d="pathData" v-bind:style="style"/>',
+      data: function () {
+        return {
+          style: {
+            fill: 'none',
+            stroke: 'var(--solarized-base02)',
+            strokeWidth: 0.5
+          }
+        }
+      },
+      computed: {
+        pathData: function () {
+          var x1 = this.source.x
+          var x2 = this.target.x
+          var y1 = this.source.y + this.source.height / 2
+          var y2 = this.target.y - this.target.height / 2
+          var cy = (y1 + y2) / 2
+          return (
+            'M' + x1 + ',' + y1 +
+            ' C' + x1 + ',' + cy + ' ' + x2 + ',' + cy +
+            ' ' + x2 + ',' + y2
+          )
+        }
+      }
+    }
 
     var Destination = {
       props: {
@@ -146,6 +188,9 @@
       el: '#app',
       data: function () {
         return {
+          connections: {
+            oscillator1ToSpeakers: { id: 'oscillator1ToSpeakers', sourceId: 'oscillator1', targetId: 'destination' }
+          },
           destinationType: DESTINATION_TYPE,
           drawOrder: ['destination', 'oscillator1'],
           oscillatorType: OSCILLATOR_TYPE,
@@ -168,6 +213,7 @@
         }
       },
       components: {
+        'connection': Connection,
         'destination': Destination,
         'oscillator': Oscillator
       }
