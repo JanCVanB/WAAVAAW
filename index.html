@@ -17,11 +17,13 @@
       --solarized-yellow: #b58900;
       --solarized-orange: #cb4b16;
       --solarized-red: #dc322f;
+      --solarized-red-light: #ec9489;
       --solarized-magenta: #d33682;
       --solarized-violet: #6c71c4;
       --solarized-blue: #268bd2;
       --solarized-cyan: #2aa198;
       --solarized-green: #859900;
+      --solarized-green-light: #c1c872;
     }
     html, body, #app {
       --app-background-color: var(--solarized-base2);
@@ -53,6 +55,9 @@
       height: calc(100% - var(--app-header-height) - var(--canvas-margin));
       width: calc(100% - 2 * var(--canvas-margin));
     }
+    .no-click {
+      pointer-events: none;
+    }
     .no-select {
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -68,6 +73,15 @@
     }
     .destroy-button:hover {
       fill: var(--solarized-base03);
+    }
+    .toolbar {
+      cursor: pointer;
+    }
+    text {
+      fill: var(--solarized-base02);
+    }
+    .white-text {
+      fill: var(--solarized-base2);
     }
   </style>
   <script src='https://unpkg.com/vue/dist/vue.js'></script>
@@ -117,6 +131,9 @@
         v-bind:target-id.sync='connection.targetId'
         v-bind:target='nodes[connection.targetId]'
         v-on:destroy='disconnect(connection.sourceId, connection.targetId)'/>
+      <toolbar
+        v-on:connect='connect'
+        v-on:create-oscillator='createOscillator'/>
     </svg>
 
   </div>
@@ -191,8 +208,8 @@
       },
       template: (
         '<g class="node" v-on:mousedown="handleMousedown" v-on:mouseleave="handleMouseleave" v-on:mousemove="handleMousemove" v-on:mouseup="handleMouseup">' +
-        '<rect v-bind:height="height" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/>' +
-        '<text class="no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text>' +
+        '<rect v-bind:height="height" v-bind:rx="height / 2" v-bind:ry="height / 2" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-bind:style="rectStyle"/>' +
+        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="height / 2" text-anchor="middle" v-bind:x="x" v-bind:y="y"> {{ label }} </text>' +
         '<text v-if="canDestroy" class="destroy-button no-select" alignment-baseline="middle" font-size="6px" text-anchor="middle" v-bind:x="destroyButtonX" v-bind:y="destroyButtonY" v-on:click="$emit(\'destroy\')"> &nbsp; x &nbsp; </text>' +
         '</g>'
       ),
@@ -205,7 +222,7 @@
           oldClientY: 0,
           rectStyle: {
             fill: this.fill,
-            fillOpacity: '0.3',
+            fillOpacity: '1',
             stroke: 'var(--solarized-base02)',
             strokeWidth: 0.3,
             transform: 'translate(-50%, -50%)'
@@ -257,7 +274,7 @@
         y: { type: Number, required: true }
       },
       template: (
-        '<node v-bind:canDestroy="false" fill="var(--solarized-red)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node v-bind:canDestroy="false" fill="var(--solarized-red-light)" v-bind:height="height" v-bind:label="name" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
       ),
       data: function () {
         return {
@@ -290,7 +307,7 @@
         y: { type: Number, required: true }
       },
       template: (
-        '<node fill="var(--solarized-green)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
+        '<node fill="var(--solarized-green-light)" v-bind:height="height" v-bind:label="frequency + \' Hz\'" v-bind:width="width" v-bind:x="x" v-bind:y="y" v-on:destroy="$emit(\'destroy\')" v-on:update:x="handleUpdateX" v-on:update:y="handleUpdateY"/>'
       ),
       data: function () {
         return {
@@ -315,6 +332,86 @@
       },
       components: {
         'node': Node
+      }
+    }
+
+    var Toolbar = {
+      template: (
+        '<g class="toolbar">' +
+        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY" v-bind:style="[rectStyle, createOscillatorRectStyle]" v-on:click="createOscillator"/>' +
+        '<text class="no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="createOscillatorX" v-bind:y="createOscillatorY"> New Oscillator </text>' +
+        '<rect v-bind:height="rectHeight" v-bind:width="rectWidth" v-bind:x="connectX" v-bind:y="connectY" v-bind:style="[rectStyle, connectRectStyle]" v-on:click="connect"/>' +
+        '<text class="white-text no-click no-select" alignment-baseline="middle" v-bind:font-size="rectHeight / 2" text-anchor="middle" v-bind:x="connectX" v-bind:y="connectY"> New Connection </text>' +
+        '</g>'
+      ),
+      data: function () {
+        return {
+          rectHeight: 10,
+          rectStyle: {
+            fillOpacity: '1',
+            stroke: 'var(--solarized-base02)',
+            strokeWidth: 0.3,
+            transform: 'translate(-50%, -50%)'
+          },
+          rectWidth: 50
+        }
+      },
+      computed: {
+        connectRectStyle: function () {
+          return { fill: 'var(--solarized-base02)' }
+        },
+        connectX: function () {
+          return this.rectWidth / 2
+        },
+        connectY: function () {
+          return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
+        },
+        createOscillatorRectStyle: function () {
+          return { fill: 'var(--solarized-green-light)' }
+        },
+        createOscillatorX: function () {
+          return 0 - this.rectWidth / 2
+        },
+        createOscillatorY: function () {
+          return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
+        }
+      },
+      methods: {
+        connect: function () {
+          this.$emit('connect', 'oscillator1', 'destination')
+        },
+        createOscillator: function () {
+          this.$emit('create-oscillator', {
+            frequency: 440,
+            height: 10,
+            id: 'oscillator1',
+            width: 50,
+            x: 0,
+            y: -50
+          })
+        },
+        handleMousedown: function (event) {
+          this.isDragging = true
+          this.oldClientX = event.clientX
+          this.oldClientY = event.clientY
+          var boundingClientRect = this.$el.parentNode.getBoundingClientRect()
+          var shorterSide = Math.min(boundingClientRect.height, boundingClientRect.width)
+          this.clientScaleFactor = 200 / shorterSide
+        },
+        handleMouseleave: function (event) {
+          this.isDragging = false
+        },
+        handleMousemove: function (event) {
+          if (this.isDragging) {
+            this.$emit('update:x', this.x + this.clientScaleFactor * (event.clientX - this.oldClientX))
+            this.$emit('update:y', this.y + this.clientScaleFactor * (event.clientY - this.oldClientY))
+            this.oldClientX = event.clientX
+            this.oldClientY = event.clientY
+          }
+        },
+        handleMouseup: function (event) {
+          this.isDragging = false
+        }
       }
     }
 
@@ -354,17 +451,8 @@
         }
       },
       methods: {
-        createOscillator: function (oscillatorInfo) {
-          var oldNodeId = this.findOldNodeId(oscillatorInfo.id)
-          if (!oldNodeId) {
-            Vue.set(this.nodes, oscillatorInfo.id, Object.assign(oscillatorInfo, {
-              node: this.audioContext.createOscillator(oscillatorInfo.frequency),
-              type: OSCILLATOR_TYPE
-            }))
-            this.drawOrder.push(oscillatorInfo.id)
-          }
-        },
         connect: function (sourceId, targetId) {
+          if (!this.nodes[sourceId] || !this.nodes[targetId]) return
           var oldConnectionId = this.findOldConnectionId(sourceId, targetId)
           if (!oldConnectionId) {
             var newConnectionId = sourceId + '_to_' + targetId
@@ -373,6 +461,16 @@
               sourceId: sourceId,
               targetId: targetId
             })
+          }
+        },
+        createOscillator: function (oscillatorInfo) {
+          var oldNodeId = this.findOldNodeId(oscillatorInfo.id)
+          if (!oldNodeId) {
+            Vue.set(this.nodes, oscillatorInfo.id, Object.assign(oscillatorInfo, {
+              node: this.audioContext.createOscillator(oscillatorInfo.frequency),
+              type: OSCILLATOR_TYPE
+            }))
+            this.drawOrder.push(oscillatorInfo.id)
           }
         },
         destroyNode: function (nodeId) {
@@ -409,21 +507,11 @@
           )
         }
       },
-      mounted: function () {
-        this.createOscillator({
-          frequency: 440,
-          height: 10,
-          id: 'oscillator1',
-          width: 50,
-          x: 0,
-          y: -50
-        })
-        this.connect('oscillator1', 'destination')
-      },
       components: {
         'connection': Connection,
         'destination': Destination,
-        'oscillator': Oscillator
+        'oscillator': Oscillator,
+        'toolbar': Toolbar
       }
     })
   </script>
