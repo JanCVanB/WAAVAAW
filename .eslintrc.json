@@ -2,6 +2,13 @@
     "extends": "standard",
     "globals": {
         "_": false,
+        "Connection": false,
+        "CONSTANTS": false,
+        "Destination": false,
+        "Gain": false,
+        "Node": false,
+        "Oscillator": false,
+        "Toolbar": false,
         "Vue": false
     },
     "plugins": [
