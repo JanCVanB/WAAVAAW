@@ -3,8 +3,8 @@ var Node = {
   props: {
     height: { type: Number, required: true },
     id: { type: String, required: true },
-    isBottomConnectorSelected: { type: Boolean, default: false },
-    isTopConnectorSelected: { type: Boolean, default: false },
+    nextConnectionSourceId: { type: String, required: true },
+    nextConnectionTargetId: { type: String, required: true },
     type: { type: String, required: true },
     waaNode: { type: window.AudioNode, required: true },
     width: { type: Number, required: true },
@@ -94,6 +94,12 @@ var Node = {
         case CONSTANTS.NODE_TYPES.OSCILLATOR:
           return true
       }
+    },
+    isBottomConnectorSelected: function () {
+      return this.nextConnectionSourceId === this.id
+    },
+    isTopConnectorSelected: function () {
+      return this.nextConnectionTargetId === this.id
     },
     hasTopConnector: function () {
       switch (this.type) {

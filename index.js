@@ -7,8 +7,8 @@ window.vm = new Vue({
       destinationType: CONSTANTS.NODE_TYPES.DESTINATION,
       drawOrder: ['destination'],
       gainType: CONSTANTS.NODE_TYPES.GAIN,
-      nextConnectionSourceId: null,
-      nextConnectionTargetId: null,
+      nextConnectionSourceId: '',
+      nextConnectionTargetId: '',
       nodes: {
         destination: {
           height: 10,
@@ -123,8 +123,8 @@ window.vm = new Vue({
       }
     },
     resetNextConnection: function () {
-      this.nextConnectionSourceId = null
-      this.nextConnectionTargetId = null
+      this.nextConnectionSourceId = ''
+      this.nextConnectionTargetId = ''
     }
   },
   components: {
