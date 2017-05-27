@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 var Connection = {
   props: {
+    colors: { type: Object, required: true },
     id: { type: String, required: true },
     source: { type: Object, required: true },
     target: { type: Object, required: true }
@@ -14,12 +15,7 @@ var Connection = {
 
   data: function () {
     return {
-      destroyButtonPadding: 0,
-      style: {
-        fill: 'none',
-        stroke: 'var(--solarized-base02)',
-        strokeWidth: 0.5
-      }
+      destroyButtonPadding: 0
     }
   },
   computed: {
@@ -40,6 +36,13 @@ var Connection = {
         ' C' + x1 + ',' + cy + ' ' + x2 + ',' + cy +
         ' ' + x2 + ',' + y2
       )
+    },
+    style: function () {
+      return {
+        fill: 'none',
+        stroke: this.colors.stroke,
+        strokeWidth: 0.5
+      }
     }
   },
   mounted: function () {

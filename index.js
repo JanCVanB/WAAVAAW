@@ -20,10 +20,37 @@ window.vm = new Vue({
           y: 50
         }
       },
-      oscillatorType: CONSTANTS.NODE_TYPES.OSCILLATOR
+      oscillatorType: CONSTANTS.NODE_TYPES.OSCILLATOR,
+      theme: 'light'
     }
   },
   computed: {
+    classes: function () {
+      return {
+        'dark-theme': this.theme === 'dark',
+        'light-theme': this.theme === 'light'
+      }
+    },
+    colors: function () {
+      switch (this.theme) {
+        case 'dark':
+          return {
+            connectorSelectedFill: 'var(--solarized-base2)',
+            destinationFill: 'var(--solarized-red)',
+            gainFill: 'var(--solarized-blue)',
+            stroke: 'var(--solarized-base1)',
+            oscillatorFill: 'var(--solarized-green)'
+          }
+        case 'light':
+          return {
+            connectorSelectedFill: 'var(--solarized-base02)',
+            destinationFill: 'var(--solarized-red-light)',
+            gainFill: 'var(--solarized-blue-light)',
+            stroke: 'var(--solarized-base01)',
+            oscillatorFill: 'var(--solarized-green-light)'
+          }
+      }
+    },
     sortedNodes: function () {
       var component = this
       var nodes = _.values(component.nodes)

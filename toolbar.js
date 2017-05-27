@@ -1,5 +1,8 @@
 // eslint-disable-next-line no-unused-vars
 var Toolbar = {
+  props: {
+    colors: { type: Object, required: true }
+  },
   template: (
     '<g class="toolbar">' +
     '<rect v-bind:height="rectHeight" v-bind:width="rectWidth"' +
@@ -24,18 +27,12 @@ var Toolbar = {
   data: function () {
     return {
       rectHeight: 10,
-      rectStyle: {
-        fillOpacity: '1',
-        stroke: 'var(--solarized-base02)',
-        strokeWidth: 0.3,
-        transform: 'translate(-50%, -50%)'
-      },
       rectWidth: 50
     }
   },
   computed: {
     createOscillatorRectStyle: function () {
-      return { fill: 'var(--solarized-green-light)' }
+      return { fill: this.colors.oscillatorFill }
     },
     createOscillatorX: function () {
       return 0 - this.rectWidth / 2
@@ -44,13 +41,20 @@ var Toolbar = {
       return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
     },
     gainRectStyle: function () {
-      return { fill: 'var(--solarized-blue-light)' }
+      return { fill: this.colors.gainFill }
     },
     gainX: function () {
       return this.rectWidth / 2
     },
     gainY: function () {
       return 0 - 100 + this.rectHeight / 2 + this.rectStyle.strokeWidth
+    },
+    rectStyle: function () {
+      return {
+        fillOpacity: '1',
+        strokeWidth: 0,
+        transform: 'translate(-50%, -50%)'
+      }
     }
   },
   methods: {

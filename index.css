@@ -20,34 +20,61 @@ html {
   --solarized-green-light: #c1c872;
 }
 html, body, #app {
-  --app-background-color: var(--solarized-base2);
-  background-color: var(--app-background-color);
-  color: var(--solarized-base00);
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
   font-family: Helvetica;
   text-align: center;
 }
+#app.dark-theme {
+  background-color: var(--solarized-base03);
+  color: var(--solarized-base0);
+}
+#app.light-theme {
+  background-color: var(--solarized-base2);
+  color: var(--solarized-base00);
+}
 #app {
   --app-header-height: 120px;
 }
 h1 {
+  margin: 0px 0px 20px 0px;
+  padding: 20px 0px 0px 0px;
+}
+.dark-theme h1 {
+  color: var(--solarized-base1);
+}
+.light-theme h1 {
   color: var(--solarized-base01);
-  margin: 20px 0px;
 }
 h3 {
   margin: 18px 0px;
 }
+#settings {
+  position: absolute;
+  right: 30px;
+  text-align: left;
+  top: 30px;
+}
+#settings input,
+#settings label {
+  cursor: pointer
+}
 #canvas {
-  --canvas-background-color: var(--solarized-base3);
   --canvas-margin: 30px;
-  background-color: var(--canvas-background-color);
   box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
   position: fixed;
   top: var(--app-header-height);
   left: var(--canvas-margin);
   height: calc(100% - var(--app-header-height) - var(--canvas-margin));
   width: calc(100% - 2 * var(--canvas-margin));
+}
+.dark-theme #canvas {
+  background-color: var(--solarized-base02);
+}
+.light-theme #canvas {
+  background-color: var(--solarized-base3);
 }
 .no-click {
   pointer-events: none;
@@ -62,25 +89,44 @@ h3 {
   cursor: move;
 }
 .destroy-button {
-  fill: var(--solarized-base01);
   cursor: pointer;
 }
-.destroy-button:hover {
+.dark-theme .destroy-button {
+  fill: var(--solarized-base1);
+}
+.dark-theme .destroy-button:hover {
+  fill: var(--solarized-base3);
+}
+.light-theme .destroy-button {
+  fill: var(--solarized-base01);
+}
+.light-theme .destroy-button:hover {
   fill: var(--solarized-base03);
 }
 .connector {
   cursor: pointer;
-  fill: var(--solarized-base02);
 }
-.connector:hover {
+.dark-theme .connector {
+  fill: var(--solarized-base0);
+}
+.dark-theme .connector:hover {
+  fill: var(--solarized-base2);
+}
+.light-theme .connector {
   fill: var(--solarized-base00);
+}
+.light-theme .connector:hover {
+  fill: var(--solarized-base02);
 }
 .toolbar {
   cursor: pointer;
 }
-text {
+.dark-theme text {
+  fill: var(--solarized-base2);
+}
+.light-theme text {
   fill: var(--solarized-base02);
 }
-.white-text {
+.white- {
   fill: var(--solarized-base2);
 }

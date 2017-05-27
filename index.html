@@ -7,7 +7,7 @@
   <link rel="stylesheet" type="text/css" href="index.css" media="screen" />
 </head>
 <body>
-  <div id='app'>
+  <div id='app' v-bind:class='classes'>
 
     <h1>
       WAAVAAW
@@ -16,14 +16,28 @@
       Web Audio API Visualizer And Audio Workstation
     </h3>
 
+    <div id='settings'>
+      <input type='radio' id='pick-light-theme' v-model='theme' value='light'>
+      <label for='pick-light-mode' v-on:click='theme = "light"'>
+        Light Theme
+      </label>
+      <br>
+      <input type='radio' id='pick-dark-theme' v-model='theme' value='dark'>
+      <label for='pick-dark-mode' v-on:click='theme = "dark"'>
+        Dark Theme
+      </label>
+    </div>
+
     <svg id='canvas' viewbox='-100 -100 200 200'>
       <toolbar
+        v-bind:colors='colors'
         v-on:connect='connect'
         v-on:create-gain='createGain'
         v-on:create-oscillator='createOscillator'/>
       <node
         v-for='node in sortedNodes'
         v-bind:key='node.id'
+        v-bind:colors='colors'
         v-bind:height.sync='node.height'
         v-bind:id='node.id'
         v-bind:next-connection-source-id='nextConnectionSourceId'
@@ -39,6 +53,7 @@
       <connection
         v-for='connection in connections'
         v-bind:key='connection.id'
+        v-bind:colors='colors'
         v-bind:id='connection.id'
         v-bind:source='nodes[connection.sourceId]'
         v-bind:target='nodes[connection.targetId]'

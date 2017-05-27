@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 var Node = {
   props: {
+    colors: { type: Object, required: true },
     height: { type: Number, required: true },
     id: { type: String, required: true },
     nextConnectionSourceId: { type: String, required: true },
@@ -54,7 +55,7 @@ var Node = {
         fillOpacity: '1',
         strokeWidth: 0
       },
-      destroyButtonPadding: 3,
+      destroyButtonPadding: 2,
       isDragging: false,
       oldClientX: 0,
       oldClientY: 0
@@ -71,7 +72,7 @@ var Node = {
     bottomConnectorStyle: function () {
       if (this.isBottomConnectorSelected) {
         return {
-          fill: 'var(--solarized-base00)'
+          fill: this.colors.connectorSelectedFill
         }
       }
       return {}
@@ -124,19 +125,18 @@ var Node = {
     rectFillColor: function () {
       switch (this.type) {
         case CONSTANTS.NODE_TYPES.DESTINATION:
-          return 'var(--solarized-red-light)'
+          return this.colors.destinationFill
         case CONSTANTS.NODE_TYPES.GAIN:
-          return 'var(--solarized-blue-light)'
+          return this.colors.gainFill
         case CONSTANTS.NODE_TYPES.OSCILLATOR:
-          return 'var(--solarized-green-light)'
+          return this.colors.oscillatorFill
       }
     },
     rectStyle: function () {
       return {
         fill: this.rectFillColor,
         fillOpacity: '1',
-        stroke: 'var(--solarized-base02)',
-        strokeWidth: 0.3,
+        strokeWidth: 0,
         transform: 'translate(-50%, -50%)'
       }
     },
@@ -151,7 +151,7 @@ var Node = {
     topConnectorStyle: function () {
       if (this.isTopConnectorSelected) {
         return {
-          fill: 'var(--solarized-base00)'
+          fill: this.colors.connectorSelectedFill
         }
       }
       return {}
