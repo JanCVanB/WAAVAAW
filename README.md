@@ -9,6 +9,5 @@ and [Vue.js](https://vuejs.org/).
 I have no idea how far I'll get before I give up on it -
 hopefully you'll be able to generate fun waveforms!
 
-<div style="text-align: center">
-  <img src="./screenshot.png" height: "300px">
-</div>
+![Screenshot (light theme)](screenshot-light.png)
+![Screenshot (dark theme)](screenshot-dark.png)
