@@ -43,9 +43,9 @@ var Connection = {
     }
   },
   mounted: function () {
-    this.source.node.connect(this.target.node)
+    this.source.waaNode.connect(this.target.waaNode)
   },
   beforeDestroy: function () {
-    this.source.node.disconnect(this.target.node)
+    this.source.waaNode.disconnect(this.target.waaNode)
   }
 }

@@ -69,7 +69,6 @@ var Toolbar = {
     },
     createOscillator: function () {
       this.$emit('create-oscillator', {
-        frequency: 440,
         height: 10,
         id: 'oscillator1',
         width: 50,

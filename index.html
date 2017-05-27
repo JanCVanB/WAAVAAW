@@ -17,52 +17,25 @@
     </h3>
 
     <svg id='canvas' viewbox='-100 -100 200 200'>
-      <template v-for='node in sortedNodes'>
-        <destination
-          v-if='node.type === destinationType'
-          v-bind:key='node.id'
-          v-bind:height.sync='node.height'
-          v-bind:id='node.id'
-          v-bind:name='node.name'
-          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
-          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
-          v-bind:node='node.node'
-          v-bind:width.sync='node.width'
-          v-bind:x.sync='node.x'
-          v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'
-          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
-          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
-        <gain
-          v-if='node.type === gainType'
-          v-bind:key='node.id'
-          v-bind:height.sync='node.height'
-          v-bind:id='node.id'
-          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
-          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
-          v-bind:node='node.node'
-          v-bind:width.sync='node.width'
-          v-bind:x.sync='node.x'
-          v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'
-          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
-          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
-        <oscillator
-          v-if='node.type === oscillatorType'
-          v-bind:key='node.id'
-          v-bind:frequency='node.frequency'
-          v-bind:height.sync='node.height'
-          v-bind:id='node.id'
-          v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
-          v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
-          v-bind:node='node.node'
-          v-bind:width.sync='node.width'
-          v-bind:x.sync='node.x'
-          v-bind:y.sync='node.y'
-          v-on:destroy='destroyNode(node.id)'
-          v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
-          v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
-      </template>
+      <toolbar
+        v-on:connect='connect'
+        v-on:create-gain='createGain'
+        v-on:create-oscillator='createOscillator'/>
+      <node
+        v-for='node in sortedNodes'
+        v-bind:key='node.id'
+        v-bind:height.sync='node.height'
+        v-bind:id='node.id'
+        v-bind:is-bottom-connector-selected='nextConnectionSourceId === node.id'
+        v-bind:is-top-connector-selected='nextConnectionTargetId === node.id'
+        v-bind:type='node.type'
+        v-bind:waa-node='node.waaNode'
+        v-bind:width.sync='node.width'
+        v-bind:x.sync='node.x'
+        v-bind:y.sync='node.y'
+        v-on:destroy='destroyNode(node.id)'
+        v-on:select-bottom-connector="handleSelectBottomConnector(node.id)"
+        v-on:select-top-connector="handleSelectTopConnector(node.id)"/>
       <connection
         v-for='connection in connections'
         v-bind:key='connection.id'
@@ -70,10 +43,6 @@
         v-bind:source='nodes[connection.sourceId]'
         v-bind:target='nodes[connection.targetId]'
         v-on:destroy='disconnect(connection.sourceId, connection.targetId)'/>
-      <toolbar
-        v-on:connect='connect'
-        v-on:create-gain='createGain'
-        v-on:create-oscillator='createOscillator'/>
     </svg>
 
   </div>
@@ -81,11 +50,8 @@
   <script src='https://unpkg.com/vue/dist/vue.js'></script>
   <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js'></script>
   <script src='constants.js'></script>
-  <script src='node.js'></script>
   <script src='connection.js'></script>
-  <script src='destination.js'></script>
-  <script src='gain.js'></script>
-  <script src='oscillator.js'></script>
+  <script src='node.js'></script>
   <script src='toolbar.js'></script>
   <script src='index.js'></script>
 </body>

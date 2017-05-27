@@ -1,14 +1,12 @@
 // eslint-disable-next-line no-unused-vars
 var Node = {
   props: {
-    canDestroy: { type: Boolean, default: true },
-    fill: { type: String, default: 'var(--canvas-background-color)' },
-    hasBottomConnector: { type: Boolean, default: false },
-    hasTopConnector: { type: Boolean, default: false },
     height: { type: Number, required: true },
+    id: { type: String, required: true },
     isBottomConnectorSelected: { type: Boolean, default: false },
     isTopConnectorSelected: { type: Boolean, default: false },
-    label: { type: String, required: true },
+    type: { type: String, required: true },
+    waaNode: { type: window.AudioNode, required: true },
     width: { type: Number, required: true },
     x: { type: Number, required: true },
     y: { type: Number, required: true }
@@ -59,14 +57,7 @@ var Node = {
       destroyButtonPadding: 3,
       isDragging: false,
       oldClientX: 0,
-      oldClientY: 0,
-      rectStyle: {
-        fill: this.fill,
-        fillOpacity: '1',
-        stroke: 'var(--solarized-base02)',
-        strokeWidth: 0.3,
-        transform: 'translate(-50%, -50%)'
-      }
+      oldClientY: 0
     }
   },
   computed: {
@@ -85,11 +76,63 @@ var Node = {
       }
       return {}
     },
+    canDestroy: function () {
+      return this.type !== CONSTANTS.NODE_TYPES.DESTINATION
+    },
     destroyButtonX: function () {
       return this.x + this.width / 2 + this.destroyButtonPadding
     },
     destroyButtonY: function () {
       return this.y - this.height / 2 - this.destroyButtonPadding
+    },
+    hasBottomConnector: function () {
+      switch (this.type) {
+        case CONSTANTS.NODE_TYPES.DESTINATION:
+          return false
+        case CONSTANTS.NODE_TYPES.GAIN:
+          return true
+        case CONSTANTS.NODE_TYPES.OSCILLATOR:
+          return true
+      }
+    },
+    hasTopConnector: function () {
+      switch (this.type) {
+        case CONSTANTS.NODE_TYPES.DESTINATION:
+          return true
+        case CONSTANTS.NODE_TYPES.GAIN:
+          return true
+        case CONSTANTS.NODE_TYPES.OSCILLATOR:
+          return false
+      }
+    },
+    label: function () {
+      switch (this.type) {
+        case CONSTANTS.NODE_TYPES.DESTINATION:
+          return 'Destination'
+        case CONSTANTS.NODE_TYPES.GAIN:
+          return this.waaNode.gain.value * 100 + '%'
+        case CONSTANTS.NODE_TYPES.OSCILLATOR:
+          return this.waaNode.frequency.value + ' Hz'
+      }
+    },
+    rectFillColor: function () {
+      switch (this.type) {
+        case CONSTANTS.NODE_TYPES.DESTINATION:
+          return 'var(--solarized-red-light)'
+        case CONSTANTS.NODE_TYPES.GAIN:
+          return 'var(--solarized-blue-light)'
+        case CONSTANTS.NODE_TYPES.OSCILLATOR:
+          return 'var(--solarized-green-light)'
+      }
+    },
+    rectStyle: function () {
+      return {
+        fill: this.rectFillColor,
+        fillOpacity: '1',
+        stroke: 'var(--solarized-base02)',
+        strokeWidth: 0.3,
+        transform: 'translate(-50%, -50%)'
+      }
     },
     topConnectorPoints: function () {
       return (
@@ -130,6 +173,26 @@ var Node = {
     },
     handleMouseup: function (event) {
       this.isDragging = false
+    }
+  },
+  mounted: function () {
+    switch (this.type) {
+      case CONSTANTS.NODE_TYPES.DESTINATION:
+        return
+      case CONSTANTS.NODE_TYPES.GAIN:
+        return
+      case CONSTANTS.NODE_TYPES.OSCILLATOR:
+        this.waaNode.start(0)
+    }
+  },
+  beforeDestroy: function () {
+    switch (this.type) {
+      case CONSTANTS.NODE_TYPES.DESTINATION:
+        return
+      case CONSTANTS.NODE_TYPES.GAIN:
+        return
+      case CONSTANTS.NODE_TYPES.OSCILLATOR:
+        this.waaNode.stop()
     }
   }
 }

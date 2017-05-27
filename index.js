@@ -13,9 +13,8 @@ window.vm = new Vue({
         destination: {
           height: 10,
           id: 'destination',
-          name: 'Destination',
-          node: CONSTANTS.AUDIO_CONTEXT.destination,
           type: CONSTANTS.NODE_TYPES.DESTINATION,
+          waaNode: CONSTANTS.AUDIO_CONTEXT.destination,
           width: 50,
           x: 0,
           y: 50
@@ -53,8 +52,8 @@ window.vm = new Vue({
       var oldNodeId = this.findOldNodeId(gainInfo.id)
       if (!oldNodeId) {
         Vue.set(this.nodes, gainInfo.id, Object.assign(gainInfo, {
-          node: this.audioContext.createGain(),
-          type: CONSTANTS.NODE_TYPES.GAIN
+          type: CONSTANTS.NODE_TYPES.GAIN,
+          waaNode: this.audioContext.createGain()
         }))
         this.drawOrder.push(gainInfo.id)
       }
@@ -63,8 +62,8 @@ window.vm = new Vue({
       var oldNodeId = this.findOldNodeId(oscillatorInfo.id)
       if (!oldNodeId) {
         Vue.set(this.nodes, oscillatorInfo.id, Object.assign(oscillatorInfo, {
-          node: this.audioContext.createOscillator(oscillatorInfo.frequency),
-          type: CONSTANTS.NODE_TYPES.OSCILLATOR
+          type: CONSTANTS.NODE_TYPES.OSCILLATOR,
+          waaNode: this.audioContext.createOscillator()
         }))
         this.drawOrder.push(oscillatorInfo.id)
       }
@@ -130,9 +129,7 @@ window.vm = new Vue({
   },
   components: {
     'connection': Connection,
-    'destination': Destination,
-    'gain': Gain,
-    'oscillator': Oscillator,
+    'node': Node,
     'toolbar': Toolbar
   }
 })
